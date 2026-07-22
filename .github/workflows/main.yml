@@ -1,6 +1,4 @@
-
 name: Packaging & Node24.js
-
 on:
 schedule:
 - cron: '30 10 * * *'
