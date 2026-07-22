@@ -1,6 +1,13 @@
-name: packaging
+
+name: Packaging & Node24.js
 
 on:
+schedule:
+- cron: '30 10 * * *'
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
   schedule:
     - cron: '30 10 * * *'
   workflow_dispatch:
@@ -19,7 +26,37 @@ permissions:
   packages: read
 
 jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        node-version: [24.x]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+
+    - name: Configure
+      run: ./configure
+
+    - name: Install dependencies
+      run: make
+
+    - name: Run check
+      run: make check
+
+    - name: Run distcheck
+      run: make distcheck
+
   pipeline:
+    needs: build
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
     uses: Dockershelf/node-pipeline/.github/workflows/update-meta-gbp.yml@main
     with:
       dists-json: '["trixie", "unstable"]'
